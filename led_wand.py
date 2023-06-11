@@ -10,23 +10,39 @@ leds = [DigitalInOut(board.GP16), DigitalInOut(board.GP17), DigitalInOut(board.G
 for led in leds:
     led.direction = Direction.OUTPUT
 
+i2c = busio.I2C(board.GP9, board.GP8)
+mpu = adafruit_mpu6050.MPU6050(i2c)
+
+msg = [254, 9, 9, 254, 9]
+
+swingPeriod = getSwingPeriod()
+interval = swingPeriod / len(msg)
+index = 0;
+
+while True:
+    light_column(index)
+    if index == len(msg) - 1:
+        index = 0
+    else:
+        index++
+    time.sleep(interval)
+    
+
 def light_column(input):
     for led in leds:
         led.value = input % 2 == 1;
         input = (int) (input / 2)
-        
-i2c = busio.I2C(board.GP9, board.GP8)
 
-mpu = adafruit_mpu6050.MPU6050(i2c)
 
-threshold = 1.0
+def getSwingPeriod():
+    prevZ = currZ = mpu.acceleration[2]
+    initTime = time.time()
+    while currZ >= prevZ:
+        currZ = mpu.acceleration[2]
+    endTime = time.time()
+    return endTime - initTime
 
-temp, temp, initialZ = mpu.acceleration
-maxZ = 0
-minZ = 0
-swingingLeft = False
-interval = 0
-swingLength = 0
+"""
 while True:
     temp, temp, currZ = mpu.acceleration
     
@@ -52,3 +68,4 @@ while True:
     
     initialZ = currZ
     time.sleep(0.1)
+"""
